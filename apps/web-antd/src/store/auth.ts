@@ -33,7 +33,18 @@ export const useAuthStore = defineStore('auth', () => {
     let userInfo: null | UserInfo = null;
     try {
       loginLoading.value = true;
-      const { accessToken } = await loginApi(params);
+      const loginResult = await loginApi(params);
+
+      // API返回格式: { code: 0, data: "jwt_token", message: "success" }
+      // responseReturn:'data' + defaultResponseInterceptor 已提取 data 字段
+      // 所以 loginResult 可能是 token 字符串本身，也可能是 {data: token} 对象
+      let accessToken: null | string = null;
+      if (typeof loginResult === 'string') {
+        accessToken = loginResult;
+      } else if (loginResult && typeof loginResult === 'object') {
+        accessToken =
+          loginResult.data || (loginResult as any).accessToken || null;
+      }
 
       // 如果成功获取到 accessToken
       if (accessToken) {
