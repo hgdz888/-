@@ -111,3 +111,28 @@ export async function verifyPasswordApi(data: AuthApi.VerifyPasswordParams) {
 export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
   return requestClient.post('/v1/Satff/StaffAccountOperate', data);
 }
+
+/**
+ * 获取微信扫码登录QR码URL
+ */
+export async function getWechatQrcodeApi() {
+  return requestClient.get<string>('/v1/auth/wechat/qrcode');
+}
+
+/**
+ * 微信扫码授权回调
+ */
+export async function wechatCallbackApi(code: string, state: string) {
+  return requestClient.get<AuthApi.LoginResult>('/v1/auth/wechat/callback', {
+    params: { code, state },
+  });
+}
+
+/**
+ * 微信移动端登录
+ */
+export async function wechatLoginApi(code: string) {
+  return requestClient.post<AuthApi.LoginResult>('/v1/auth/wechat/login', {
+    code,
+  });
+}
