@@ -7,8 +7,13 @@ import { computed, ref } from 'vue';
 import { AuthenticationCodeLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
+import { useAuthStore } from '#/store';
+
+import { sendEmailCodeApi, verifyCodeLoginApi } from '#/api';
+
 defineOptions({ name: 'CodeLogin' });
 
+const authStore = useAuthStore();
 const loading = ref(false);
 const CODE_LENGTH = 6;
 
@@ -17,16 +22,13 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInput',
       componentProps: {
-        placeholder: $t('authentication.mobile'),
+        placeholder: '请输入手机号或邮箱',
       },
       fieldName: 'phoneNumber',
-      label: $t('authentication.mobile'),
+      label: '手机号/邮箱',
       rules: z
         .string()
-        .min(1, { message: $t('authentication.mobileTip') })
-        .refine((v) => /^\d{11}$/.test(v), {
-          message: $t('authentication.mobileErrortip'),
-        }),
+        .min(1, { message: '请输入手机号或邮箱' }),
     },
     {
       component: 'VbenPinInput',
@@ -35,11 +37,15 @@ const formSchema = computed((): VbenFormSchema[] => {
         createText: (countdown: number) => {
           const text =
             countdown > 0
-              ? $t('authentication.sendText', [countdown])
-              : $t('authentication.sendCode');
+              ? `${countdown}秒后重发`
+              : '发送验证码';
           return text;
         },
         placeholder: $t('authentication.code'),
+        onSendCode: async () => {
+          const values = await authStore.authLogin;
+          void values;
+        },
       },
       fieldName: 'code',
       label: $t('authentication.code'),
@@ -49,13 +55,47 @@ const formSchema = computed((): VbenFormSchema[] => {
     },
   ];
 });
-/**
- * 异步处理登录操作
- * Asynchronously handle the login process
- * @param values 登录表单数据
- */
+
 async function handleLogin(values: Recordable<any>) {
-  void values;
+  try {
+    loading.value = true;
+    const result = await verifyCodeLoginApi({
+      code: values.code,
+      phoneNumber: values.phoneNumber,
+    });
+
+    let accessToken: null | string = null;
+    if (typeof result === 'string') {
+      accessToken = result;
+    } else if (result && typeof result === 'object') {
+      accessToken =
+        (result as any).data || (result as any).accessToken || null;
+    }
+
+    if (accessToken) {
+      const { useAccessStore } = await import('@vben/stores');
+      const accessStore = useAccessStore();
+      accessStore.setAccessToken(accessToken);
+
+      const { getUserInfoApi } = await import('#/api');
+      const userInfo = await getUserInfoApi();
+      const { useUserStore } = await import('@vben/stores');
+      const userStore = useUserStore();
+      userStore.setUserInfo(userInfo);
+
+      const { getAccessCodesApi } = await import('#/api');
+      const accessCodes = await getAccessCodesApi();
+      accessStore.setAccessCodes(accessCodes);
+
+      const { useRouter } = await import('vue-router');
+      const router = useRouter();
+      await router.push(userInfo.homePath || '/dashboard/analytics');
+    }
+  } catch {
+    // 错误由请求拦截器处理
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 

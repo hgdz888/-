@@ -19,6 +19,29 @@ export namespace AuthApi {
     data: string;
     status: number;
   }
+
+  /** 验证码登录参数 */
+  export interface VerifyCodeLoginParams {
+    phoneNumber?: string;
+    code?: string;
+  }
+
+  /** 发送验证码参数 */
+  export interface SendCodeParams {
+    email: string;
+  }
+
+  /** 修改密码参数 */
+  export interface ChangePasswordParams {
+    typeId: number;
+    newPassword?: string;
+  }
+
+  /** 验证当前密码参数 */
+  export interface VerifyPasswordParams {
+    userId?: string;
+    oldPassword?: string;
+  }
 }
 
 /**
@@ -54,4 +77,37 @@ export async function logoutApi() {
  */
 export async function getAccessCodesApi() {
   return requestClient.post<string[]>('/v1/auth/codes');
+}
+
+/**
+ * 验证码登录
+ */
+export async function verifyCodeLoginApi(data: AuthApi.VerifyCodeLoginParams) {
+  return requestClient.post<AuthApi.LoginResult>(
+    '/v1/auth/VerifyCodeLogin',
+    data,
+  );
+}
+
+/**
+ * 发送邮箱验证码
+ */
+export async function sendEmailCodeApi(email: string) {
+  return requestClient.get('/v1/Satff/Emailcode', { params: { email } });
+}
+
+/**
+ * 验证当前用户密码是否正确
+ */
+export async function verifyPasswordApi(data: AuthApi.VerifyPasswordParams) {
+  return requestClient.get('/v1/Satff/verifyCurrentUserPassword', {
+    params: data,
+  });
+}
+
+/**
+ * 修改密码 (typeId=2 表示修改密码)
+ */
+export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
+  return requestClient.post('/v1/Satff/StaffAccountOperate', data);
 }
