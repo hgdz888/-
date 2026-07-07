@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import type { VbenFormSchema } from '#/adapter/form';
 
+import { onMounted } from 'vue';
+
 import { Page } from '@vben/common-ui';
+import { useUserStore } from '@vben/stores';
 
 import { Card, message } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
+
+import { updateStaffApi } from '#/api/core/auth';
+
+const userStore = useUserStore();
 
 const formSchema: VbenFormSchema[] = [
   {
@@ -75,21 +82,35 @@ const [Form, formApi] = useVbenForm({
   },
   schema: formSchema,
   showDefaultActions: true,
+  handleSubmit: async (values: Record<string, any>) => {
+    try {
+      await updateStaffApi(values);
+      message.success('保存成功');
+    } catch {
+      message.error('保存失败');
+    }
+  },
 });
 
-const handleSubmit = async () => {
-  const { valid, values } = await formApi.validateAndSubmitForm();
-  if (valid) {
-    console.log('Form values:', values);
-    message.success('保存成功');
+onMounted(async () => {
+  const userInfo = userStore.userInfo;
+  if (userInfo) {
+    formApi.setValues({
+      realName: userInfo.realName || '',
+      phone: userInfo.phone || '',
+      age: userInfo.age || undefined,
+      email: userInfo.email || '',
+      gender: userInfo.gender || '',
+      address: userInfo.address || '',
+    });
   }
-};
+});
 </script>
 
 <template>
   <Page title="个人信息绑定" description="请填写您的个人信息以便我们为您提供更好的服务">
     <Card>
-      <Form @submit="handleSubmit" />
+      <Form />
     </Card>
   </Page>
 </template>

@@ -136,3 +136,20 @@ export async function wechatLoginApi(code: string) {
     code,
   });
 }
+
+/** 更新个人信息参数 */
+export interface UpdateStaffParams {
+  realName?: string;
+  phone?: string;
+  age?: number;
+  email?: string;
+  gender?: string;
+  address?: string;
+}
+
+/**
+ * 更新个人信息
+ */
+export async function updateStaffApi(data: UpdateStaffParams) {
+  return requestClient.post('/v1/Satff/UpdateStaff', data);
+}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -9,9 +10,19 @@ import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import ProfileSecuritySetting from './security-setting.vue';
 
+const route = useRoute();
 const userStore = useUserStore();
 
-const tabsValue = ref<string>('basic');
+const tabsValue = ref<string>((route.query.tab as string) || 'basic');
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab && typeof tab === 'string') {
+      tabsValue.value = tab;
+    }
+  },
+);
 
 const tabs = ref([
   {

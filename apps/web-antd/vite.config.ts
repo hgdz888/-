@@ -13,6 +13,11 @@ export default defineConfig(async () => {
             target: 'http://gxcah.com:8077',
             ws: true,
           },
+          '/v1': {
+            changeOrigin: true,
+            target: 'http://gxcah.com:8077',
+            ws: true,
+          },
         },
       },
     },
