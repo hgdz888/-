@@ -98,7 +98,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     :show-forget-password="true"
     :show-qrcode-login="true"
     :show-third-party-login="false"
-    :show-register="false"
+    :show-register="true"
     @submit="authStore.authLogin"
   />
 </template>

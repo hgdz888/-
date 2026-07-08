@@ -153,3 +153,60 @@ export interface UpdateStaffParams {
 export async function updateStaffApi(data: UpdateStaffParams) {
   return requestClient.post('/v1/Satff/UpdateStaff', data);
 }
+
+/** 注册参数 */
+export interface RegisterParams {
+  account?: string;
+  code?: string;
+  password?: string;
+  username?: string;
+  organizationId?: number[][];
+}
+
+/** 组织架构 */
+export interface OrganizationItem {
+  id: number;
+  parentId: number;
+  orgName: string;
+  orgCode: string;
+  children?: OrganizationItem[];
+}
+
+/** 地区信息 */
+export interface RegionItem {
+  id: number;
+  parentId: number;
+  name: string;
+  code: string;
+  level: number;
+  children?: RegionItem[];
+}
+
+/**
+ * 注册用户
+ */
+export async function registerApi(data: RegisterParams) {
+  return requestClient.post('/v1/Satff/Register', data);
+}
+
+/**
+ * 获取组织架构列表
+ */
+export async function getOrganizationApi() {
+  const response = await baseRequestClient.get<any>(
+    '/v1/Organizationstructure/GetAllOrganizationstructure',
+    { responseReturn: 'raw' },
+  );
+  return response.data?.data || [];
+}
+
+/**
+ * 获取地区信息
+ */
+export async function getRegionApi(id: number = 0) {
+  const response = await baseRequestClient.get<any>('/v1/company-regional', {
+    params: { id },
+    responseReturn: 'raw',
+  });
+  return response.data?.data || [];
+}

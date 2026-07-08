@@ -23,6 +23,10 @@ withDefaults(defineProps<Props>(), {
 });
 
 const tabsValue = defineModel<string>('modelValue');
+
+function handleTabChange(value: number | string) {
+  tabsValue.value = String(value);
+}
 </script>
 <template>
   <Page auto-content-height>
@@ -41,7 +45,12 @@ const tabsValue = defineModel<string>('modelValue');
           </span>
         </div>
         <Separator class="my-4" />
-        <Tabs v-model="tabsValue" orientation="vertical" class="m-4">
+        <Tabs
+          :model-value="tabsValue"
+          orientation="vertical"
+          class="m-4"
+          @update:model-value="handleTabChange"
+        >
           <TabsList class="grid w-full grid-cols-1 bg-card">
             <TabsTrigger
               v-for="tab in tabs"
