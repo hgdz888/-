@@ -210,3 +210,60 @@ export async function getRegionApi(id: number = 0) {
   });
   return response.data?.data || [];
 }
+
+// ==================== 账号绑定相关接口 ====================
+
+/** 发送绑定验证码参数 */
+export interface SendBindingCodeParams {
+  type: string; // phone / email
+  account: string;
+  purpose: string; // bind / rebind / unbind
+}
+
+/** 绑定/换绑/解绑参数 */
+export interface BindingParams {
+  type: string; // phone / email
+  account?: string;
+  code?: string;
+  token?: string;
+}
+
+/** 验证密码参数 */
+export interface VerifyBindPasswordParams {
+  password: string;
+}
+
+/**
+ * 发送绑定验证码
+ */
+export async function sendBindingCodeApi(data: SendBindingCodeParams) {
+  return requestClient.post('/v1/account-binding/send-code', data);
+}
+
+/**
+ * 验证密码（绑定/换绑/解绑前需要）
+ */
+export async function verifyBindPasswordApi(data: VerifyBindPasswordParams) {
+  return requestClient.post('/v1/account-binding/verify-password', data);
+}
+
+/**
+ * 首次绑定手机/邮箱
+ */
+export async function bindAccountApi(data: BindingParams) {
+  return requestClient.post('/v1/account-binding/bind', data);
+}
+
+/**
+ * 换绑手机/邮箱
+ */
+export async function rebindAccountApi(data: BindingParams) {
+  return requestClient.post('/v1/account-binding/rebind', data);
+}
+
+/**
+ * 解绑手机/邮箱
+ */
+export async function unbindAccountApi(data: { type: string }) {
+  return requestClient.post('/v1/account-binding/unbind', data);
+}

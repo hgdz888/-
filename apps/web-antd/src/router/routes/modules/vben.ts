@@ -111,6 +111,16 @@ const routes: RouteRecordRaw[] = [
       title: $t('page.auth.profile'),
     },
   },
+  {
+    name: 'AccountSetting',
+    path: '/account-setting',
+    component: () => import('#/views/_core/profile/account-setting.vue'),
+    meta: {
+      icon: 'lucide:user',
+      hideInMenu: true,
+      title: '账号信息',
+    },
+  },
 ];
 
 export default routes;

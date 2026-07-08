@@ -15,7 +15,6 @@ import {
 import { preferences, usePreferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
-import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
@@ -85,7 +84,7 @@ const showDot = computed(() =>
 const menus = computed(() => [
   {
     handler: () => {
-      router.push({ name: 'Profile' });
+      router.push({ name: 'AccountSetting' });
     },
     icon: 'lucide:user',
     text: '账号信息',
