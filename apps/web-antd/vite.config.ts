@@ -1,12 +1,10 @@
 import { defineConfig } from '@vben/vite-config';
 
-import { accountBindingMockPlugin } from './src/mock/account-binding';
-
 export default defineConfig(async () => {
   return {
     application: {},
     vite: {
-      plugins: [accountBindingMockPlugin()],
+      // plugins: [accountBindingMockPlugin()], // 禁用mock，使用真实后端
       server: {
         proxy: {
           '/api': {
