@@ -5,6 +5,8 @@ import { computed, onMounted, reactive, ref } from 'vue';
 
 import {
   Button,
+  Form,
+  FormItem,
   Input,
   message,
   Modal,
@@ -15,22 +17,26 @@ import {
 } from 'ant-design-vue';
 
 import {
+  addStaffApi,
   deleteStaffApi,
   getAllOrganizationApi,
   getStaffByOrgApi,
   resetStaffPwdApi,
+  updateStaffApi,
 } from '#/api/core/org-staff';
 
 interface StaffRecord {
-  sId: number;
+  staffId: number;
   userId?: string;
+  userName?: string;
   realName?: string;
   phoneNum?: string;
   email?: string;
   sex?: number;
-  addTime?: string;
+  addtime?: string;
   companyName?: string;
   approved?: number;
+  cid?: number[];
   [key: string]: any;
 }
 
@@ -55,10 +61,81 @@ const searchForm = reactive({
   pageSize: 15,
 });
 
+// 添加用户相关状态
+const addModalVisible = ref(false);
+const addFormLoading = ref(false);
+const addFormRef = ref();
+const addForm = reactive({
+  userId: '',
+  realName: '',
+  phoneNum: '',
+  email: '',
+  sex: undefined as number | undefined,
+  passWord: '',
+  cid: undefined as number | undefined,
+  approved: 0,
+});
+const addFormRules: Record<string, any[]> = {
+  userId: [
+    {
+      required: true,
+      message: '请输入用户账号',
+      trigger: 'blur',
+      type: 'string',
+    },
+  ],
+  realName: [
+    {
+      required: true,
+      message: '请输入昵称',
+      trigger: 'blur',
+      type: 'string',
+    },
+  ],
+  phoneNum: [
+    {
+      required: true,
+      message: '请输入手机号',
+      trigger: 'blur',
+      type: 'string',
+    },
+  ],
+  email: [
+    {
+      required: true,
+      message: '请输入邮箱',
+      trigger: 'blur',
+      type: 'string',
+    },
+  ],
+  passWord: [
+    {
+      required: true,
+      message: '请输入密码',
+      trigger: 'blur',
+      type: 'string',
+    },
+  ],
+};
+
+// 编辑用户相关状态
+const editModalVisible = ref(false);
+const editFormLoading = ref(false);
+const editForm = reactive({
+  sId: 0,
+  userId: '',
+  realName: '',
+  phoneNum: '',
+  email: '',
+  sex: undefined as number | undefined,
+  cid: undefined as number | undefined,
+  approved: 0,
+});
+
 const columns = [
-  { title: '序号', dataIndex: 'sId', key: 'sId', width: 60 },
+  { title: '序号', dataIndex: 'staffId', key: 'staffId', width: 60 },
   { title: '昵称', dataIndex: 'realName', key: 'realName', width: 100 },
-  { title: '用户账号', dataIndex: 'userId', key: 'userId', width: 120 },
+  { title: '用户账号', dataIndex: 'userName', key: 'userName', width: 120 },
   {
     title: '性别',
     dataIndex: 'sex',
@@ -69,9 +146,11 @@ const columns = [
   },
   {
     title: '所属组织',
-    dataIndex: 'companyName',
-    key: 'companyName',
+    dataIndex: 'orgName',
+    key: 'orgName',
     width: 120,
+    customRender: ({ text }: any) =>
+      Array.isArray(text) ? text.join(', ') : text || '',
   },
   {
     title: '邮箱',
@@ -81,7 +160,7 @@ const columns = [
     ellipsis: true,
   },
   { title: '手机号', dataIndex: 'phoneNum', key: 'phoneNum', width: 120 },
-  { title: '创建时间', dataIndex: 'addTime', key: 'addTime', width: 160 },
+  { title: '创建时间', dataIndex: 'addtime', key: 'addtime', width: 160 },
   {
     title: '状态',
     dataIndex: 'approved',
@@ -177,13 +256,85 @@ function handleReset() {
   fetchData();
 }
 
+function showAddModal() {
+  addForm.userId = '';
+  addForm.realName = '';
+  addForm.phoneNum = '';
+  addForm.email = '';
+  addForm.sex = undefined;
+  addForm.passWord = '';
+  addForm.cid = undefined;
+  addForm.approved = 0;
+  addModalVisible.value = true;
+}
+
+async function handleAddSubmit() {
+  try {
+    await addFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  try {
+    addFormLoading.value = true;
+    const submitData = {
+      ...addForm,
+      cid: addForm.cid ? [addForm.cid] : [],
+    };
+    await addStaffApi(submitData);
+    message.success('添加用户成功');
+    addModalVisible.value = false;
+    fetchData();
+  } catch (error: any) {
+    message.error(error?.message || '添加用户失败');
+  } finally {
+    addFormLoading.value = false;
+  }
+}
+
+function handleEdit(record: StaffRecord) {
+  editForm.sId = record.staffId;
+  editForm.userId = record.userName || '';
+  editForm.realName = record.realName || '';
+  editForm.phoneNum = record.phoneNum || '';
+  editForm.email = record.email || '';
+  editForm.sex = record.sex;
+  editForm.cid =
+    record.cid && record.cid.length > 0 ? record.cid[0] : undefined;
+  editForm.approved = record.approved || 0;
+  editModalVisible.value = true;
+}
+
+async function handleEditSubmit() {
+  try {
+    editFormLoading.value = true;
+    const submitData = {
+      sId: editForm.sId,
+      userName: editForm.userId,
+      realName: editForm.realName,
+      phoneNum: editForm.phoneNum,
+      email: editForm.email,
+      sex: editForm.sex,
+      cid: editForm.cid ? [editForm.cid] : [],
+      approved: editForm.approved,
+    };
+    await updateStaffApi(submitData);
+    message.success('修改用户成功');
+    editModalVisible.value = false;
+    fetchData();
+  } catch (error: any) {
+    message.error(error?.message || '修改用户失败');
+  } finally {
+    editFormLoading.value = false;
+  }
+}
+
 function handleDelete(record: StaffRecord) {
   Modal.confirm({
     title: '确认删除',
-    content: `确定要删除用户"${record.realName || record.userId}"吗？`,
+    content: `确定要删除用户"${record.realName || record.userName}"吗？`,
     onOk: async () => {
       try {
-        await deleteStaffApi(record.sId);
+        await deleteStaffApi(record.staffId);
         message.success('删除成功');
         fetchData();
       } catch {
@@ -196,12 +347,12 @@ function handleDelete(record: StaffRecord) {
 function handleResetPwd(record: StaffRecord) {
   Modal.confirm({
     title: '确认重置密码',
-    content: `确定要重置用户"${record.realName || record.userId}"的密码吗？`,
+    content: `确定要重置用户"${record.realName || record.userName}"的密码吗？`,
     onOk: async () => {
       try {
         await resetStaffPwdApi({
           type: 'email',
-          account: record.email || record.userId,
+          account: record.email || record.userName,
         });
         message.success('密码已重置');
       } catch {
@@ -279,9 +430,7 @@ onMounted(() => {
 
       <!-- 操作栏 -->
       <div class="mb-4">
-        <Button type="primary" @click="message.info('添加用户功能待实现')">
-          添加用户
-        </Button>
+        <Button type="primary" @click="showAddModal"> 添加用户 </Button>
       </div>
 
       <!-- 表格 -->
@@ -297,7 +446,7 @@ onMounted(() => {
             showSizeChanger: true,
             showTotal: (t: number) => `共 ${t} 条记录`,
           }"
-          row-key="sId"
+          row-key="staffId"
           :scroll="{ x: 1200 }"
           @change="handleTableChange"
         >
@@ -307,7 +456,7 @@ onMounted(() => {
                 <Button
                   type="link"
                   size="small"
-                  @click="message.info('编辑功能待实现')"
+                  @click="handleEdit(record as StaffRecord)"
                 >
                   编辑
                 </Button>
@@ -332,6 +481,119 @@ onMounted(() => {
         </Table>
       </div>
     </div>
+
+    <!-- 添加用户模态框 -->
+    <Modal
+      v-model:open="addModalVisible"
+      title="添加用户"
+      :confirm-loading="addFormLoading"
+      @ok="handleAddSubmit"
+      @cancel="addModalVisible = false"
+    >
+      <Form
+        ref="addFormRef"
+        :model="addForm"
+        :rules="addFormRules"
+        layout="vertical"
+      >
+        <FormItem label="用户账号" name="userId">
+          <Input v-model:value="addForm.userId" placeholder="请输入用户账号" />
+        </FormItem>
+        <FormItem label="昵称" name="realName">
+          <Input v-model:value="addForm.realName" placeholder="请输入昵称" />
+        </FormItem>
+        <FormItem label="手机号" name="phoneNum">
+          <Input v-model:value="addForm.phoneNum" placeholder="请输入手机号" />
+        </FormItem>
+        <FormItem label="邮箱" name="email">
+          <Input v-model:value="addForm.email" placeholder="请输入邮箱" />
+        </FormItem>
+        <FormItem label="密码" name="passWord">
+          <Input.Password
+            v-model:value="addForm.passWord"
+            placeholder="请输入密码"
+          />
+        </FormItem>
+        <FormItem label="性别" name="sex">
+          <Select
+            v-model:value="addForm.sex"
+            placeholder="请选择性别"
+            allow-clear
+            :options="[
+              { label: '男', value: 1 },
+              { label: '女', value: 2 },
+              { label: '保密', value: 0 },
+            ]"
+          />
+        </FormItem>
+        <FormItem label="所属组织" name="cid">
+          <Select
+            v-model:value="addForm.cid"
+            placeholder="请选择所属组织"
+            allow-clear
+            :options="
+              orgTreeData.map((node) => ({
+                label: node.title,
+                value: node.key,
+              }))
+            "
+          />
+        </FormItem>
+      </Form>
+    </Modal>
+
+    <!-- 编辑用户模态框 -->
+    <Modal
+      v-model:open="editModalVisible"
+      title="编辑用户"
+      :confirm-loading="editFormLoading"
+      @ok="handleEditSubmit"
+      @cancel="editModalVisible = false"
+    >
+      <Form :model="editForm" layout="vertical">
+        <FormItem label="用户账号" name="userId">
+          <Input
+            v-model:value="editForm.userId"
+            placeholder="用户账号"
+            disabled
+          />
+        </FormItem>
+        <FormItem label="昵称" name="realName">
+          <Input v-model:value="editForm.realName" placeholder="请输入昵称" />
+        </FormItem>
+        <FormItem label="手机号" name="phoneNum">
+          <Input v-model:value="editForm.phoneNum" placeholder="请输入手机号" />
+        </FormItem>
+        <FormItem label="邮箱" name="email">
+          <Input v-model:value="editForm.email" placeholder="请输入邮箱" />
+        </FormItem>
+        <FormItem label="性别" name="sex">
+          <Select
+            v-model:value="editForm.sex"
+            placeholder="请选择性别"
+            allow-clear
+            :options="[
+              { label: '男', value: 1 },
+              { label: '女', value: 2 },
+              { label: '保密', value: 0 },
+            ]"
+          />
+        </FormItem>
+        <FormItem label="所属组织" name="cid">
+          <Select
+            v-model:value="editForm.cid"
+            placeholder="请选择所属组织"
+            allow-clear
+            :options="
+              orgTreeData.map((node) => ({
+                label: node.title,
+                value: node.key,
+              }))
+            "
+          />
+        </FormItem>
+      </Form>
+    </Modal>
   </div>
 </template>
 

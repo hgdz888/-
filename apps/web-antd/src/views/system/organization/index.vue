@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import { Button, message, Modal, Space, Table } from 'ant-design-vue';
+import {
+  AutoComplete,
+  Button,
+  message,
+  Modal,
+  Space,
+  Table,
+} from 'ant-design-vue';
 
 import {
   addOrganizationApi,
@@ -28,6 +35,7 @@ const modalVisible = ref(false);
 const modalTitle = ref('添加组织');
 const formData = ref<Partial<OrgRecord>>({});
 const expandedRowKeys = ref<number[]>([]);
+const searchOptions = ref<{ label: string; value: string }[]>([]);
 
 const columns = [
   { title: '序号', dataIndex: 'id', key: 'id', width: 80 },
@@ -56,6 +64,34 @@ function generateSequence(tree: OrgRecord[], prefix = ''): Map<number, string> {
 }
 
 const sequenceMap = computed(() => generateSequence(dataSource.value));
+
+const flatOrgList = computed(() => {
+  const list: { id: number; name: string; parentId: number }[] = [];
+  function traverse(nodes: OrgRecord[], parentId: number) {
+    for (const node of nodes) {
+      list.push({ id: node.id, name: node.name, parentId });
+      if (node.children && node.children.length > 0) {
+        traverse(node.children, node.id);
+      }
+    }
+  }
+  traverse(dataSource.value, 0);
+  return list;
+});
+
+function handleSearch(value: string) {
+  if (!value) {
+    searchOptions.value = [];
+    return;
+  }
+  const filtered = flatOrgList.value.filter((item) =>
+    item.name.toLowerCase().includes(value.toLowerCase()),
+  );
+  searchOptions.value = filtered.map((item) => ({
+    value: item.name,
+    label: item.name,
+  }));
+}
 
 async function fetchData() {
   loading.value = true;
@@ -106,11 +142,21 @@ async function handleSubmit() {
     return;
   }
   try {
+    const submitData: any = {
+      name: formData.value.name,
+      code: formData.value.code || `ORG_${Date.now()}`,
+      parentId: formData.value.parentId || 0,
+      level: formData.value.level || 0,
+      isDel: false,
+      isLeaf: true,
+      path: '',
+    };
     if (formData.value.id) {
-      await updateOrganizationApi(formData.value);
+      submitData.id = formData.value.id;
+      await updateOrganizationApi(submitData);
       message.success('修改成功');
     } else {
-      await addOrganizationApi(formData.value);
+      await addOrganizationApi(submitData);
       message.success('添加成功');
     }
     modalVisible.value = false;
@@ -184,10 +230,17 @@ onMounted(() => {
       <div class="py-4">
         <div class="mb-3">
           <label class="mb-1 block">组织名称</label>
-          <input
-            v-model="formData.name"
-            class="w-full rounded border px-3 py-2"
-            placeholder="请输入组织名称"
+          <AutoComplete
+            v-model:value="formData.name"
+            :options="searchOptions"
+            placeholder="请输入组织名称，可搜索匹配"
+            style="width: 100%"
+            @search="handleSearch"
+            @select="
+              (val: any) => {
+                formData.name = String(val);
+              }
+            "
           />
         </div>
       </div>
