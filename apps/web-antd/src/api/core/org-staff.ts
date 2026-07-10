@@ -85,7 +85,7 @@ export interface StaffItem {
   approved?: number;
   userName?: string;
   companyName?: string;
-  cid?: string;
+  cid?: number[];
   [key: string]: any;
 }
 
